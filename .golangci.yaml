@@ -1,0 +1,69 @@
+run:
+  # timeout for analysis, e.g. 30s, 3m, default is 1m
+  timeout: 5m
+  # run linter on test files, which is highly recommended.
+  # tests: true # This is the default, so the line can be removed entirely.
+
+linters:
+  disable-all: true
+  enable:
+    # --- Core & Bug Detection ---
+    - govet          # Official Go tool for finding suspicious constructs. Essential.
+    - staticcheck    # The king of static analysis. Finds bugs, performance issues, and simplifications.
+    - errcheck       # Checks for unchecked errors. Essential.
+    - gosec          # Security linter.
+
+    # --- Style & Formatting ---
+    - goimports      # Formats code and manages imports (replaces gofmt).
+    - goconst        # Finds repeated strings that could be constants.
+    - misspell       # Corrects common misspellings in comments and strings.
+    - tagliatelle    # Enforces struct tag conventions (e.g., json, yaml).
+    - unconvert      # Removes unnecessary type conversions.
+    # - nakedret     # Consider disabling this to encourage explicit returns.
+
+    # --- Performance & Optimization ---
+    - prealloc       # Finds slice declarations that could be pre-allocated.
+    - ineffassign    # Checks for ineffectual assignments.
+    - bodyclose      # Checks for unclosed response bodies.
+
+    # --- Other ---
+    - unparam        # Reports unused function parameters.
+    # - dupl         # Finds duplicate code. Can be noisy but useful.
+
+linters-settings:
+  # gofmt is replaced by goimports, which respects the same settings.
+  goimports:
+    local-prefixes: github.com/arwoosa/media # Set your project's prefix here
+  misspell:
+    locale: US
+  errcheck:
+    # Report errors on unchecked type assertions.
+    check-type-assertions: true
+  dupl:
+    # Tokens count to trigger issue, Default: 150
+    threshold: 100
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+        yaml: snake
+        # Add other tag rules if needed, e.g., db, form.
+        # db: snake
+        # form: snake
+
+issues:
+  # No limit on issues from a single linter or of the same type.
+  max-same-issues: 0
+  max-issues-per-linter: 0
+
+  # We are using disable-all, so we don't need to exclude defaults.
+  exclude-use-default: false
+
+  exclude:
+    # This is correct. Exclude gosec's G104 because errcheck handles it better.
+    - "G104"
+    # Example of how to exclude a specific message from a linter in a specific path:
+    # - path: _test\.go
+    #   text: "G404: Use of weak random number generator"
+    #   linters:
+    #     - gosec
