@@ -4,10 +4,8 @@ package ezgrpc
 
 import (
 	"context"
-
-	"strings"
-
 	"net/http"
+	"strings"
 
 	"github.com/arwoosa/vulpes/codec"
 	"github.com/arwoosa/vulpes/errors"
@@ -95,13 +93,15 @@ func gatewayResponseModifier(ctx context.Context, response http.ResponseWriter, 
 }
 
 // getSessionFromCtx retrieves the session from the context.
-func getSessionFromCtx(ctx context.Context) *sessions.Session {
-	return ctx.Value(sessionContextKey).(*sessions.Session)
+func getSessionFromCtx(ctx context.Context) (*sessions.Session, bool) {
+	s, ok := ctx.Value(sessionContextKey).(*sessions.Session)
+	return s, ok
 }
 
 // getRequestFromCtx retrieves the HTTP request from the context.
-func getRequestFromCtx(ctx context.Context) *http.Request {
-	return ctx.Value(requestContextKey).(*http.Request)
+func getRequestFromCtx(ctx context.Context) (*http.Request, bool) {
+	r, ok := ctx.Value(requestContextKey).(*http.Request)
+	return r, ok
 }
 
 // getBoolFromServerMetadata retrieves a boolean value from server metadata.
@@ -111,13 +111,19 @@ func getBoolFromServerMetadata(md runtime.ServerMetadata, name string, defaultVa
 		return defaultValue
 	}
 	boolString := values[0]
-	return strings.ToLower(boolString) == "true"
+	return strings.ToLower(boolString) == valueTrue
 }
 
 // saveSession saves session data to the session store.
 func saveSession(ctx context.Context, response http.ResponseWriter, data string) error {
-	session := getSessionFromCtx(ctx)
-	req := getRequestFromCtx(ctx)
+	session, ok := getSessionFromCtx(ctx)
+	if !ok {
+		return errors.NewWrapperError(Err_SessionNotFound, "session not found in context")
+	}
+	req, ok := getRequestFromCtx(ctx)
+	if !ok {
+		return errors.NewWrapperError(Err_SessionNotFound, "request not found in context")
+	}
 	session.Values[sessionDataKey] = data
 	err := session.Save(req, response)
 	if err != nil {
@@ -128,8 +134,14 @@ func saveSession(ctx context.Context, response http.ResponseWriter, data string)
 
 // deleteSession deletes a session by setting its max age to -1.
 func deleteSession(ctx context.Context, response http.ResponseWriter) error {
-	session := getSessionFromCtx(ctx)
-	req := getRequestFromCtx(ctx)
+	session, ok := getSessionFromCtx(ctx)
+	if !ok {
+		return errors.NewWrapperError(Err_SessionNotFound, "session not found in context")
+	}
+	req, ok := getRequestFromCtx(ctx)
+	if !ok {
+		return errors.NewWrapperError(Err_SessionNotFound, "request not found in context")
+	}
 
 	// As documented, to delete a session, set its max age to -1.
 	session.Options.MaxAge = -1
@@ -146,13 +158,16 @@ func deleteSession(ctx context.Context, response http.ResponseWriter) error {
 func extractSessionDataFromCookie(ctx context.Context, req *http.Request) metadata.MD {
 	md := make(metadata.MD)
 
-	session := ctx.Value(sessionContextKey).(*sessions.Session)
-	if session == nil {
+	session, ok := getSessionFromCtx(ctx)
+	if !ok || session == nil {
 		return md
 	}
+
 	if val, ok := session.Values[sessionDataKey]; ok {
-		md.Set(sessionDataKey, val.(string))
-		log.Debugf("extract session data: %s", val.(string))
+		if strVal, ok := val.(string); ok {
+			md.Set(sessionDataKey, strVal)
+			log.Debugf("extract session data: %s", strVal)
+		}
 	}
 
 	return md
@@ -179,7 +194,7 @@ func sessionMiddleware(next http.Handler) http.Handler {
 
 // DeleteSession signals that the session should be deleted by setting a metadata key.
 func DeleteSession(ctx context.Context) error {
-	return grpc.SetHeader(ctx, metadata.Pairs(deleteSessionKey, "true"))
+	return grpc.SetHeader(ctx, metadata.Pairs(deleteSessionKey, valueTrue))
 }
 
 // SetSessionData encodes a value and sets it as session data in the gRPC metadata.

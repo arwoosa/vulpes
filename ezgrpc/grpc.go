@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/arwoosa/vulpes/ezgrpc/interceptor"
 	"github.com/arwoosa/vulpes/log"
@@ -128,7 +129,6 @@ func InjectGrpcService(f func(grpc.ServiceRegistrar)) {
 // RunGrpcGateway starts the gRPC gateway and HTTP server.
 // It listens on the specified port and serves both gRPC and HTTP traffic.
 func RunGrpcGateway(ctx context.Context, port int) error {
-
 	gwmux := runtime.NewServeMux(DefaultServeMuxOpts...)
 
 	portStr := fmt.Sprintf(":%d", port)
@@ -150,7 +150,11 @@ func RunGrpcGateway(ctx context.Context, port int) error {
 	router.PathPrefix("/").Handler(gwmux)
 
 	gwServer := &http.Server{
-		Handler: handlerFunc(grpcService, router),
+		Handler:           handlerFunc(grpcService, router),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	log.Info("Serving on", log.Int("port", port))
 	return gwServer.Serve(lis)

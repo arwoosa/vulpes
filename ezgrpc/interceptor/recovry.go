@@ -18,10 +18,8 @@ func recoveryHandler(p interface{}) error {
 	return status.Errorf(codes.Internal, "internal error: %v", p)
 }
 
-var (
-	// recoveryInterceptor is a gRPC unary server interceptor that recovers from panics.
-	// It uses the recoveryHandler to process the panic and return a gRPC error.
-	recoveryInterceptor = grpc_recovery.UnaryServerInterceptor(
-		grpc_recovery.WithRecoveryHandler(recoveryHandler),
-	)
+// recoveryInterceptor is a gRPC unary server interceptor that recovers from panics.
+// It uses the recoveryHandler to process the panic and return a gRPC error.
+var recoveryInterceptor = grpc_recovery.UnaryServerInterceptor(
+	grpc_recovery.WithRecoveryHandler(recoveryHandler),
 )

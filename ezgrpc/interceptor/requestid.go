@@ -9,8 +9,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
-	"log"
-
+	"github.com/arwoosa/vulpes/log"
 	"github.com/google/uuid"
 )
 
@@ -64,7 +63,7 @@ var requestIDInterceptor grpc.UnaryServerInterceptor = func(
 
 	// Example of logging the request ID.
 	if p, ok := peer.FromContext(ctx); ok {
-		log.Printf("[gRPC] %s - %s - requestID=%s", p.Addr.String(), info.FullMethod, requestID)
+		log.Info("gRPC request received", log.String("peer.address", p.Addr.String()), log.String("grpc.method", info.FullMethod), log.String("request_id", requestID))
 	}
 
 	return handler(ctx, req)

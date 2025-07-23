@@ -19,10 +19,8 @@ type Index interface {
 	Indexes() []mongo.IndexModel
 }
 
-var (
-	// indexes holds all registered Index definitions for the application.
-	indexes = []Index{}
-)
+// indexes holds all registered Index definitions for the application.
+var indexes = []Index{}
 
 // collectDef is a concrete implementation of the Index interface.
 // It is used internally to store registered index information.
@@ -63,7 +61,7 @@ func CreateIndexesIfNotExists(ctx context.Context) error {
 	if conn == nil {
 		return ErrNotConnected
 	}
-	var db = conn.db
+	db := conn.db
 	// Retrieve a list of all existing collection names in the database.
 	dbNames, err := db.ListCollectionNames(ctx, bson.D{})
 	if err != nil {

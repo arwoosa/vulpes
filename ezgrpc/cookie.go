@@ -19,11 +19,14 @@ import (
 // This allows gRPC handlers to set cookies on the client's browser.
 var CookieForwarder = runtime.WithForwardResponseOption(setCookieForwarder)
 
-// setCookieKey is the metadata key used to pass cookie values from the gRPC service to the gateway.
-const setCookieKey = "set-cookie-header"
-
-// deleteCookieKey is the metadata key used to signal that a cookie should be deleted.
-const deleteCookieKey = "delete-cookie"
+const (
+	// setCookieKey is the metadata key used to pass cookie values from the gRPC service to the gateway.
+	setCookieKey = "set-cookie-header"
+	// deleteCookieKey is the metadata key used to signal that a cookie should be deleted.
+	deleteCookieKey = "delete-cookie"
+	// valueTrue is a constant for the string "true" to avoid magic strings.
+	valueTrue = "true"
+)
 
 // SetCookie sends a cookie to the client by embedding it in the gRPC header metadata.
 // The grpc-gateway, configured with CookieForwarder, will translate this into a standard HTTP Set-Cookie header.
@@ -71,7 +74,7 @@ func setCookieForwarder(ctx context.Context, w http.ResponseWriter, resp proto.M
 
 	// 檢查是否有刪除 cookie 的標記
 	if deleteCookieFlag := md.HeaderMD.Get(deleteCookieKey); len(deleteCookieFlag) > 0 {
-		if strings.ToLower(deleteCookieFlag[0]) == "true" {
+		if strings.ToLower(deleteCookieFlag[0]) == valueTrue {
 			// 設定 Max-Age 為 -1 或 Expires 為過去的時間來刪除 cookie
 			past := time.Now().Add(-time.Hour).UTC().Format(time.RFC1123)
 			deleteCookieStr := fmt.Sprintf("session_token=; Path=/; Expires=%s; Max-Age=0; HttpOnly; SameSite=Lax", past)

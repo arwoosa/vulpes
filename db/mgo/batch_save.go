@@ -35,8 +35,9 @@ func BatchSave(ctx context.Context, doclist DocSlice) (int64, error) {
 		}
 	}
 
-	// Transform the documents into the required mongo.WriteModel format for the bulk write operation.
-	var models []mongo.WriteModel
+	// Pre-allocate the slice for write models with the exact capacity needed.
+	// This avoids repeated memory allocations inside the loop, improving performance.
+	models := make([]mongo.WriteModel, 0, len(doclist))
 	for _, d := range doclist {
 		models = append(models, mongo.NewInsertOneModel().SetDocument(d))
 	}

@@ -1,12 +1,14 @@
+// Package relation provides a client for Ory Keto, an open-source authorization server.
+// It simplifies the process of creating and managing relation tuples for access control.
 package relation
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
+	"github.com/arwoosa/vulpes/log"
 	pb "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -65,10 +67,14 @@ func Initialize(opts ...Option) {
 
 func Close() {
 	if writeconn != nil {
-		writeconn.Close()
+		if err := writeconn.Close(); err != nil {
+			log.Error("failed to close keto write connection", log.Err(err))
+		}
 	}
 	if readconn != nil {
-		readconn.Close()
+		if err := readconn.Close(); err != nil {
+			log.Error("failed to close keto read connection", log.Err(err))
+		}
 	}
 }
 
@@ -86,18 +92,25 @@ func WriteTuple(ctx context.Context, tuples tupleBuilder) error {
 	return err
 }
 
+// GrpcKeto is an example function demonstrating how to interact with the Keto Read API.
+// It is not intended for production use but serves as a useful reference.
 func GrpcKeto() error {
-	// 建立 gRPC 連線
+	// Create a gRPC connection to the Keto Read API.
 	conn, err := grpc.NewClient("keto.dev.orb.local:4466", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("連線失敗: %v", err)
+		log.Error("failed to connect to keto", log.Err(err))
+		return err
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Error("failed to close keto connection", log.Err(err))
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Read
+	// Create a new ReadServiceClient.
 	readClt := pb.NewReadServiceClient(conn)
 	resp, err := readClt.ListRelationTuples(ctx, &pb.ListRelationTuplesRequest{
 		Query: &pb.ListRelationTuplesRequest_Query{
@@ -114,19 +127,19 @@ func GrpcKeto() error {
 		},
 	})
 	if err != nil {
-		log.Fatalf("查詢失敗: %v", err)
+		log.Error("failed to list relation tuples", log.Err(err))
+		return err
 	}
 
-	fmt.Println("🔍 查詢結果：")
+	fmt.Println("🔍 Query Result:")
 	for _, t := range resp.RelationTuples {
 		if t.Subject.GetId() != "" {
-			fmt.Printf(" - %s %s %s#%s\n",
-				t.Subject.GetId(), t.Namespace, t.Object, t.Relation)
+			fmt.Printf(" - %s is a %s of %s#%s\n",
+				t.Subject.GetId(), t.Relation, t.Namespace, t.Object)
 		} else if t.Subject.GetSet() != nil {
-			fmt.Printf(" - %s %s %s %s#%s\n",
-				t.Subject.GetSet().Namespace, t.Subject.GetSet().Object, t.Namespace, t.Object, t.Relation)
+			fmt.Printf(" - members of %s:%s are %s of %s#%s\n",
+				t.Subject.GetSet().Namespace, t.Subject.GetSet().Object, t.Relation, t.Namespace, t.Object)
 		}
-
 	}
 
 	return nil
