@@ -20,4 +20,6 @@ var (
 	ErrListCollectionFailed = errors.New("mongodb list collection failed")
 	// ErrBulkWriteFailed is returned when a bulk write operation (e.g., BatchSave) fails.
 	ErrBulkWriteFailed = errors.New("mongodb bulk write failed")
+	// ErrDeleteFailed is returned when a delete operation fails.
+	ErrDeleteFailed = errors.New("mongodb delete failed")
 )
