@@ -4,8 +4,8 @@ package codec
 
 import (
 	"encoding/base64"
+	"fmt"
 
-	"github.com/arwoosa/vulpes/errors"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -17,7 +17,7 @@ type msgpackCodec[T any] struct{}
 func (c *msgpackCodec[T]) Encode(v T) (string, error) {
 	b, err := msgpack.Marshal(v)
 	if err != nil {
-		return "", errors.NewWrapperError(ERR_MsgPackEncodeFailed, err.Error())
+		return "", fmt.Errorf("%w: %w", ErrMsgPackEncodeFailed, err)
 	}
 	return base64.StdEncoding.EncodeToString(b), nil
 }
@@ -26,11 +26,11 @@ func (c *msgpackCodec[T]) Encode(v T) (string, error) {
 func (c *msgpackCodec[T]) Decode(s string) (T, error) {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return *new(T), errors.NewWrapperError(ERR_Base64DecodeFailed, err.Error())
+		return *new(T), fmt.Errorf("%w: %w", ErrBase64DecodeFailed, err)
 	}
 	var v T
 	if err := msgpack.Unmarshal(b, &v); err != nil {
-		return *new(T), errors.NewWrapperError(ERR_MsgPackDecodeFailed, err.Error())
+		return *new(T), fmt.Errorf("%w: %w", ErrMsgPackDecodeFailed, err)
 	}
 	return v, nil
 }
@@ -44,7 +44,7 @@ func (c *msgpackCodec[T]) Method() CodecMethod {
 func encodeMsgPack[T any](v T) (string, error) {
 	b, err := msgpack.Marshal(v)
 	if err != nil {
-		return "", errors.NewWrapperError(ERR_MsgPackEncodeFailed, err.Error())
+		return "", fmt.Errorf("%w: %w", ErrMsgPackEncodeFailed, err)
 	}
 	return base64.StdEncoding.EncodeToString(b), nil
 }
@@ -54,11 +54,11 @@ func decodeMsgPack[T any](s string) (T, error) {
 	var out T
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return out, errors.NewWrapperError(ERR_Base64DecodeFailed, err.Error())
+		return out, fmt.Errorf("%w: %w", ErrBase64DecodeFailed, err)
 	}
 	err = msgpack.Unmarshal(b, &out)
 	if err != nil {
-		return out, errors.NewWrapperError(ERR_MsgPackDecodeFailed, err.Error())
+		return out, fmt.Errorf("%w: %w", ErrMsgPackDecodeFailed, err)
 	}
 	return out, nil
 }

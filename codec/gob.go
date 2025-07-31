@@ -6,8 +6,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/gob"
-
-	"github.com/arwoosa/vulpes/errors"
+	"fmt"
 )
 
 // gobCodec implements the Codec interface using Go's built-in GOB serialization.
@@ -19,7 +18,7 @@ func (c *gobCodec[T]) Encode(v T) (string, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(v)
 	if err != nil {
-		return "", errors.NewWrapperError(ERR_GobEncodeFailed, err.Error())
+		return "", fmt.Errorf("%w: %w", ErrGobEncodeFailed, err)
 	}
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
@@ -28,14 +27,14 @@ func (c *gobCodec[T]) Encode(v T) (string, error) {
 func (c *gobCodec[T]) Decode(s string) (T, error) {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return *new(T), errors.NewWrapperError(ERR_Base64DecodeFailed, err.Error())
+		return *new(T), fmt.Errorf("%w: %w", ErrBase64DecodeFailed, err)
 	}
 	var buf bytes.Buffer
 	buf.Write(data)
 	var result T
 	err = gob.NewDecoder(&buf).Decode(&result)
 	if err != nil {
-		return *new(T), errors.NewWrapperError(ERR_GobDecodeFailed, err.Error())
+		return *new(T), fmt.Errorf("%w: %w", ErrGobDecodeFailed, err)
 	}
 	return result, nil
 }
@@ -50,7 +49,7 @@ func encodeGOB[T any](v T) (string, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(v)
 	if err != nil {
-		return "", errors.NewWrapperError(ERR_GobEncodeFailed, err.Error())
+		return "", fmt.Errorf("%w: %w", ErrGobEncodeFailed, err)
 	}
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
@@ -60,11 +59,11 @@ func decodeGOB[T any](s string) (T, error) {
 	var out T
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
-		return out, errors.NewWrapperError(ERR_Base64DecodeFailed, err.Error())
+		return out, fmt.Errorf("%w: %w", ErrBase64DecodeFailed, err)
 	}
 	err = gob.NewDecoder(bytes.NewReader(data)).Decode(&out)
 	if err != nil {
-		return out, errors.NewWrapperError(ERR_GobDecodeFailed, err.Error())
+		return out, fmt.Errorf("%w: %w", ErrGobDecodeFailed, err)
 	}
 	return out, nil
 }

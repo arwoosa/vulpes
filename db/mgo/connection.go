@@ -4,10 +4,9 @@ package mgo
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
-
-	"github.com/arwoosa/vulpes/errors"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -81,14 +80,14 @@ func InitConnection(ctx context.Context, dbName string, opts ...Option) error {
 		// Establish the connection to the server.
 		client, err = mongo.Connect(clientOpts)
 		if err != nil {
-			err = errors.NewWrapperError(ErrConnectionFailed, err.Error())
+			err = errors.Join(ErrConnectionFailed, err)
 			return
 		}
 
 		// Ping the primary node to verify that the connection is alive.
 		err = client.Ping(ctx, readpref.Primary())
 		if err != nil {
-			err = errors.NewWrapperError(ErrPingFailed, err.Error())
+			err = errors.Join(ErrPingFailed, err)
 			return
 		}
 

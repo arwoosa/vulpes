@@ -4,11 +4,11 @@ package ezgrpc
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/arwoosa/vulpes/codec"
-	"github.com/arwoosa/vulpes/errors"
 	"github.com/arwoosa/vulpes/log"
 	"github.com/gorilla/sessions"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -114,20 +114,23 @@ func getBoolFromServerMetadata(md runtime.ServerMetadata, name string, defaultVa
 	return strings.ToLower(boolString) == valueTrue
 }
 
+var errSessionNotFoundInContext = fmt.Errorf("%w: session not found in context", Err_SessionNotFound)
+var errRequestNotFoundInContext = fmt.Errorf("%w: request not found in context", Err_SessionNotFound)
+
 // saveSession saves session data to the session store.
 func saveSession(ctx context.Context, response http.ResponseWriter, data string) error {
 	session, ok := getSessionFromCtx(ctx)
 	if !ok {
-		return errors.NewWrapperError(Err_SessionNotFound, "session not found in context")
+		return errSessionNotFoundInContext
 	}
 	req, ok := getRequestFromCtx(ctx)
 	if !ok {
-		return errors.NewWrapperError(Err_SessionNotFound, "request not found in context")
+		return errRequestNotFoundInContext
 	}
 	session.Values[sessionDataKey] = data
 	err := session.Save(req, response)
 	if err != nil {
-		return errors.NewWrapperError(Err_SessionSaveFailed, err.Error())
+		return fmt.Errorf("%w: %w", Err_SessionSaveFailed, err)
 	}
 	return nil
 }
@@ -136,11 +139,12 @@ func saveSession(ctx context.Context, response http.ResponseWriter, data string)
 func deleteSession(ctx context.Context, response http.ResponseWriter) error {
 	session, ok := getSessionFromCtx(ctx)
 	if !ok {
-		return errors.NewWrapperError(Err_SessionNotFound, "session not found in context")
+
+		return errSessionNotFoundInContext
 	}
 	req, ok := getRequestFromCtx(ctx)
 	if !ok {
-		return errors.NewWrapperError(Err_SessionNotFound, "request not found in context")
+		return errRequestNotFoundInContext
 	}
 
 	// As documented, to delete a session, set its max age to -1.
@@ -148,7 +152,7 @@ func deleteSession(ctx context.Context, response http.ResponseWriter) error {
 	session.Options.Path = "/"
 	// "Save" the session with max age = -1 to clear it.
 	if err := session.Save(req, response); err != nil {
-		return errors.NewWrapperError(Err_SessionSaveFailed, err.Error())
+		return fmt.Errorf("%w: %w", Err_SessionSaveFailed, err)
 	}
 	return nil
 }
@@ -212,11 +216,12 @@ func SetSessionData[T any](ctx context.Context, value T) error {
 func GetSessionData[T any](ctx context.Context) (T, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return *new(T), errors.NewWrapperError(Err_SessionNotFound, "can't get metadata from context")
+		return *new(T), fmt.Errorf("%w: can't get metadata from context", Err_SessionNotFound)
 	}
+	// Retrieve the session data from the metadata.
 	data := md.Get(sessionDataKey)
 	if len(data) == 0 {
-		return *new(T), errors.NewWrapperError(Err_SessionNotFound, "can not get session data from metadata")
+		return *new(T), fmt.Errorf("%w: can't get session data from metadata", Err_SessionNotFound)
 	}
 	return codec.Decode[T](data[0])
 }

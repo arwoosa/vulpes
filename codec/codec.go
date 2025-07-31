@@ -5,7 +5,8 @@
 package codec
 
 import (
-	"github.com/arwoosa/vulpes/errors"
+	"fmt"
+
 	"github.com/arwoosa/vulpes/log"
 )
 
@@ -43,7 +44,7 @@ func Encode(v any) (string, error) {
 	case MSGPACK:
 		return encodeMsgPack(v)
 	default:
-		return "", errors.NewWrapperError(ERR_UnknownCodecMethod, "unsupported codec method specified")
+		return "", fmt.Errorf("%w: unsupported codec method [%s]", ErrUnknownCodecMethod, defaultCodeMethod)
 	}
 }
 
@@ -56,6 +57,6 @@ func Decode[T any](s string) (T, error) {
 	case MSGPACK:
 		return decodeMsgPack[T](s)
 	default:
-		return *new(T), errors.NewWrapperError(ERR_UnknownCodecMethod, "unsupported codec method specified")
+		return *new(T), fmt.Errorf("%w: unsupported codec method [%s]", ErrUnknownCodecMethod, defaultCodeMethod)
 	}
 }

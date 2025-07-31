@@ -5,7 +5,8 @@ package mgo
 import (
 	"context"
 
-	"github.com/arwoosa/vulpes/errors"
+	"errors"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -65,7 +66,7 @@ func CreateIndexesIfNotExists(ctx context.Context) error {
 	// Retrieve a list of all existing collection names in the database.
 	dbNames, err := db.ListCollectionNames(ctx, bson.D{})
 	if err != nil {
-		return errors.NewWrapperError(ErrListCollectionFailed, err.Error())
+		return errors.Join(ErrListCollectionFailed, err)
 	}
 
 	// Create a map for quick lookup of existing collections.
@@ -82,14 +83,14 @@ func CreateIndexesIfNotExists(ctx context.Context) error {
 			if len(index.Indexes()) == 0 {
 				err = db.CreateCollection(ctx, index.C())
 				if err != nil {
-					return errors.NewWrapperError(ErrCreateIndexFailed, err.Error())
+					return errors.Join(ErrCreateIndexFailed, err)
 				}
 				continue
 			}
 			// Create the defined indexes for the new collection.
 			_, err := db.Collection(index.C()).Indexes().CreateMany(ctx, index.Indexes())
 			if err != nil {
-				return errors.NewWrapperError(ErrCreateIndexFailed, err.Error())
+				return errors.Join(ErrCreateIndexFailed, err)
 			}
 		}
 	}

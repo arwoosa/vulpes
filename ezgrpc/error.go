@@ -5,7 +5,6 @@ package ezgrpc
 import (
 	"errors"
 
-	wrapperErr "github.com/arwoosa/vulpes/errors"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,29 +30,33 @@ var (
 //
 // err: The custom error with a message.
 // Returns a gRPC status, or nil if the input error is nil.
-func ToStatus(err wrapperErr.ErrorWithMessage) *status.Status {
+func ToStatus(err error) *status.Status {
 	if err == nil {
 		return nil
 	}
 	var baseSt *status.Status
-	switch err.Err() {
-	case Err_SessionNotFound:
+
+	switch {
+	case errors.Is(err, Err_SessionNotFound):
 		baseSt = Status_EZgrpc_Session_NotFound
-	case Err_SessionSaveFailed:
+	case errors.Is(err, Err_SessionSaveFailed):
 		baseSt = Status_EZgrpc_Session_SaveFailed
 	default:
 		// For unhandled errors, create a generic internal error status.
-		return status.New(codes.Internal, err.Err().Error())
+		return status.New(codes.Internal, err.Error())
 	}
-
+	unwrapErr := errors.Unwrap(err)
+	if unwrapErr == nil {
+		unwrapErr = err
+	}
 	// Add more details to the status, such as the type of violation and a description.
 	st, myErr := baseSt.WithDetails(
 		&errdetails.PreconditionFailure{
 			Violations: []*errdetails.PreconditionFailure_Violation{
 				{
 					Type:        "EZGRPE_SESSION",
-					Subject:     err.Err().Error(),
-					Description: err.Msg(),
+					Subject:     unwrapErr.Error(),
+					Description: err.Error(),
 				},
 			},
 		},

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/arwoosa/vulpes/codec"
-	"github.com/arwoosa/vulpes/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 )
@@ -55,7 +54,7 @@ func TestGetSessionData_Errors(t *testing.T) {
 
 		// Verify: Check for the specific error
 		assert.Error(t, err)
-		assert.ErrorIs(t, err.(errors.ErrorWithMessage).Err(), Err_SessionNotFound)
+		assert.ErrorIs(t, err, Err_SessionNotFound)
 	})
 
 	t.Run("NoSessionDataInMetadata", func(t *testing.T) {
@@ -67,7 +66,7 @@ func TestGetSessionData_Errors(t *testing.T) {
 
 		// Verify: Check for the specific error
 		assert.Error(t, err)
-		assert.ErrorIs(t, err.(errors.ErrorWithMessage).Err(), Err_SessionNotFound)
+		assert.ErrorIs(t, err, Err_SessionNotFound)
 	})
 
 	t.Run("CorruptedData", func(t *testing.T) {
@@ -79,6 +78,6 @@ func TestGetSessionData_Errors(t *testing.T) {
 
 		// Verify: Check that a codec error is returned
 		assert.Error(t, err)
-		assert.ErrorIs(t, err.(errors.ErrorWithMessage).Err(), codec.ERR_Base64DecodeFailed)
+		assert.ErrorIs(t, err, codec.ErrBase64DecodeFailed)
 	})
 }
