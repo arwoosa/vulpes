@@ -4,8 +4,8 @@ package mgo
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/arwoosa/vulpes/errors"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -18,7 +18,7 @@ import (
 // Returns the number of successfully inserted documents, or an error if the operation fails.
 func BatchSave(ctx context.Context, doclist DocSlice) (int64, error) {
 	if len(doclist) == 0 {
-		return 0, errors.NewWrapperError(ErrInvalidDocument, "no documents to save")
+		return 0, fmt.Errorf("%w: no documents to save", ErrInvalidDocument)
 	}
 	var err error
 	// All documents in a single batch must belong to the same collection.
@@ -27,11 +27,11 @@ func BatchSave(ctx context.Context, doclist DocSlice) (int64, error) {
 	for _, d := range doclist {
 		// Enforce that all documents are for the same collection.
 		if d.C() != cname {
-			return 0, errors.NewWrapperError(ErrInvalidDocument, "all documents must be in the same collection")
+			return 0, fmt.Errorf("%w: all documents must be in the same collection", ErrInvalidDocument)
 		}
 		// Run the document's own validation logic.
 		if err = d.Validate(); err != nil {
-			return 0, errors.NewWrapperError(ErrInvalidDocument, err.Error())
+			return 0, fmt.Errorf("%w: validation failed: %w", ErrInvalidDocument, err)
 		}
 	}
 
@@ -46,7 +46,7 @@ func BatchSave(ctx context.Context, doclist DocSlice) (int64, error) {
 	collection := GetCollection(cname)
 	writeResult, err := collection.BulkWrite(ctx, models)
 	if err != nil {
-		return 0, errors.NewWrapperError(ErrBulkWriteFailed, err.Error())
+		return 0, fmt.Errorf("%w: %v", ErrWriteFailed, err)
 	}
 
 	return writeResult.InsertedCount, nil

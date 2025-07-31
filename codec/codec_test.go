@@ -5,10 +5,10 @@ package codec
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 
-	wrapperErr "github.com/arwoosa/vulpes/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -89,14 +89,14 @@ func TestDecodeError(t *testing.T) {
 		t.Run("InvalidBase64", func(t *testing.T) {
 			_, err := Decode[testStruct]("invalid base64")
 			assert.Error(t, err)
-			assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_Base64DecodeFailed)
+			assert.ErrorIs(t, err, ErrBase64DecodeFailed)
 		})
 
 		t.Run("InvalidGob", func(t *testing.T) {
 			// "invalid gob" base64 encoded
 			_, err := Decode[testStruct]("aW52YWxpZCBnb2I=")
 			assert.Error(t, err)
-			assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_GobDecodeFailed)
+			assert.ErrorIs(t, err, ErrGobDecodeFailed)
 		})
 	})
 
@@ -105,14 +105,14 @@ func TestDecodeError(t *testing.T) {
 		t.Run("InvalidBase64", func(t *testing.T) {
 			_, err := Decode[testStruct]("invalid base64")
 			assert.Error(t, err)
-			assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_Base64DecodeFailed)
+			assert.ErrorIs(t, err, ErrBase64DecodeFailed)
 		})
 
 		t.Run("InvalidMsgPack", func(t *testing.T) {
 			// "invalid msgpack" base64 encoded
 			_, err := Decode[testStruct]("aW52YWxpZCBtc2dwYWNr")
 			assert.Error(t, err)
-			assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_MsgPackDecodeFailed)
+			assert.ErrorIs(t, err, ErrMsgPackDecodeFailed)
 		})
 	})
 }
@@ -142,16 +142,16 @@ func TestUnknownCodecMethod(t *testing.T) {
 
 	_, err := Encode(testStruct{Name: "test", Age: 10})
 	assert.Error(t, err)
-	assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_UnknownCodecMethod)
+	assert.ErrorIs(t, err, ErrUnknownCodecMethod)
 
 	_, err = Decode[testStruct]("some string")
 	assert.Error(t, err)
-	assert.ErrorIs(t, err.(wrapperErr.ErrorWithMessage).Err(), ERR_UnknownCodecMethod)
+	assert.ErrorIs(t, err, ErrUnknownCodecMethod)
 }
 
 func TestToStatus(t *testing.T) {
 	t.Run("nil error", func(t *testing.T) {
-		var err wrapperErr.ErrorWithMessage = nil
+		var err error = nil
 		st := ToStatus(err)
 		assert.Nil(t, st)
 	})
@@ -159,9 +159,9 @@ func TestToStatus(t *testing.T) {
 	t.Run("non-nil error", func(t *testing.T) {
 		originalErr := errors.New("original error")
 		msg := "error message"
-		err := wrapperErr.NewWrapperError(originalErr, msg)
+		err := fmt.Errorf("%w: %s", originalErr, msg)
 
-		st := ToStatus(err.(wrapperErr.ErrorWithMessage))
+		st := ToStatus(err)
 		assert.NotNil(t, st)
 		assert.Equal(t, codes.Internal, st.Code())
 		assert.Equal(t, "codec error", st.Message())
@@ -171,13 +171,12 @@ func TestToStatus(t *testing.T) {
 
 		precond, ok := details[0].(*errdetails.PreconditionFailure)
 		assert.True(t, ok, "expected PreconditionFailure detail, got %T", details[0])
-
 		if ok {
 			assert.Len(t, precond.Violations, 1)
 			violation := precond.Violations[0]
 			assert.Equal(t, "CODEC", violation.Type)
 			assert.Equal(t, originalErr.Error(), violation.Subject)
-			assert.Equal(t, msg, violation.Description)
+			assert.Equal(t, err.Error(), violation.Description)
 		}
 	})
 }

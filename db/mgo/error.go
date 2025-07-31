@@ -18,8 +18,8 @@ var (
 	ErrCreateIndexFailed = errors.New("mongodb create index failed")
 	// ErrListCollectionFailed is returned when listing the collections in the database fails.
 	ErrListCollectionFailed = errors.New("mongodb list collection failed")
-	// ErrBulkWriteFailed is returned when a bulk write operation (e.g., BatchSave) fails.
-	ErrBulkWriteFailed = errors.New("mongodb bulk write failed")
-	// ErrDeleteFailed is returned when a delete operation fails.
-	ErrDeleteFailed = errors.New("mongodb delete failed")
+	// ErrWriteFailed is returned when a write operation fails.
+	ErrWriteFailed = errors.New("mongodb write failed")
+	// ErrReadFailed is returned when a read operation fails.
+	ErrReadFailed = errors.New("mongodb read failed")
 )
