@@ -16,8 +16,8 @@ var (
 
 	StatusRelationWriteConnectionFailed = status.New(codes.Aborted, "relation write connection failed")
 	StatusRelationReadConnectionFailed  = status.New(codes.Aborted, "relation read connection failed")
-	StatusRelationWriteFailed           = status.New(codes.Aborted, "relation write failed")
-	StatusRelationReadFailed            = status.New(codes.Aborted, "relation read failed")
+	StatusRelationWriteFailed           = status.New(codes.Internal, "relation write failed")
+	StatusRelationReadFailed            = status.New(codes.Internal, "relation read failed")
 )
 
 func ToStatus(err error) *status.Status {
