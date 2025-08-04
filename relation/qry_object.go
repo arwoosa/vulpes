@@ -90,7 +90,6 @@ func QueryObjectBySubjectSetRelation(ctx context.Context, namespace, subjectName
 		SubjectId: subjectObject,
 		Relation:  relation,
 	}
-	fmt.Println(len(resp.RelationTuples))
 	for _, rt := range resp.RelationTuples {
 		result.AddObject(rt.Namespace, rt.Object)
 	}
