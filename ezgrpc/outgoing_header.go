@@ -1,8 +1,6 @@
 package ezgrpc
 
 import (
-	"fmt"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
@@ -16,7 +14,6 @@ func outgoingHeaderMatcherHandler(key string) (string, bool) {
 			return key, false
 		}
 	}
-	fmt.Println("outgoing", key)
 	// 對其他所有 metadata，使用預設的行為
 	return key, true
 }
