@@ -168,7 +168,40 @@ func handlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handle
 		if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
 			grpcServer.ServeHTTP(w, r)
 		} else {
+			if otherHandler == nil {
+				http.NotFound(w, r)
+				return
+			}
 			otherHandler.ServeHTTP(w, r)
 		}
 	}), &http2.Server{})
+}
+
+func Run(port int) error {
+	return runServe(port, nil)
+}
+
+func RunGrpcWithHttp(port int, httpHandler http.Handler) error {
+	if httpHandler == nil {
+		return Run(port)
+	}
+	return runServe(port, httpHandler)
+}
+
+func runServe(port int, httpHandler http.Handler) error {
+	portStr := fmt.Sprintf(":%d", port)
+	lis, err := net.Listen("tcp", portStr)
+	if err != nil {
+		return err
+	}
+	reflection.Register(grpcService)
+	gwServer := &http.Server{
+		Handler:           handlerFunc(grpcService, httpHandler),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	log.Info("Serving on", log.Int("port", port))
+	return gwServer.Serve(lis)
 }
