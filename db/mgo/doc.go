@@ -10,6 +10,7 @@ type DocInter interface {
 	Index
 	// Validate performs business logic validation on the document's fields.
 	Validate() error
+	GetId() any
 }
 
 // DocSlice represents a collection of documents that all conform to the DocInter interface.
