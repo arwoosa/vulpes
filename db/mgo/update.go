@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func UpdateOneWithPartial(ctx context.Context, d DocInter, fields bson.D) (int64, error) {
+func UpdateByIdWithPartialFields(ctx context.Context, d DocInter, fields bson.D) (int64, error) {
 	collection := GetCollection(d.C())
 	result, err := collection.UpdateOne(ctx, bson.M{"_id": d.GetId()},
 		bson.D{
@@ -20,7 +20,7 @@ func UpdateOneWithPartial(ctx context.Context, d DocInter, fields bson.D) (int64
 	return 0, err
 }
 
-func UpdateOneWithIncrField(ctx context.Context, d DocInter, query bson.D, incrFields bson.D) (int64, error) {
+func UpdateOneWithIncrFields(ctx context.Context, d DocInter, query bson.D, incrFields bson.D) (int64, error) {
 	collection := GetCollection(d.C())
 	result, err := collection.UpdateOne(ctx, query,
 		bson.D{
