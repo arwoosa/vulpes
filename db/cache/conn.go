@@ -37,6 +37,18 @@ func WithDb(db int) initConnOpt {
 	}
 }
 
+func WithPassword(password string) initConnOpt {
+	return func(o *redis.Options) {
+		o.Password = password
+	}
+}
+
+func WithUsername(username string) initConnOpt {
+	return func(o *redis.Options) {
+		o.Username = username
+	}
+}
+
 func InitConnection(opts ...initConnOpt) error {
 	if conn != nil {
 		return nil
