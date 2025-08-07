@@ -18,6 +18,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	mockResponse = "response"
+)
+
+const handlerErrorKey contextKey = "handler-error"
+
 // --- Mocks and Helpers ---
 
 // mockHandler is a mock grpc.UnaryHandler for testing.
@@ -31,10 +37,10 @@ func mockHandler(ctx context.Context, req interface{}) (interface{}, error) {
 		time.Sleep(d)
 	}
 	// Return a predefined error from the context, if any
-	if err, ok := ctx.Value("handler-error").(error); ok {
+	if err, ok := ctx.Value(handlerErrorKey).(error); ok {
 		return nil, err
 	}
-	return "response", nil
+	return mockResponse, nil
 }
 
 // mockValidator is a mock for the validator interface.
@@ -104,7 +110,7 @@ func TestRequestIDInterceptor(t *testing.T) {
 		var handlerCtx context.Context
 		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 			handlerCtx = ctx
-			return "response", nil
+			return mockResponse, nil
 		}
 
 		_, err := requestIDInterceptor(context.Background(), "request", mockInfo, handler)
@@ -124,7 +130,7 @@ func TestRequestIDInterceptor(t *testing.T) {
 		var handlerCtx context.Context
 		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 			handlerCtx = ctx
-			return "response", nil
+			return mockResponse, nil
 		}
 
 		_, err := requestIDInterceptor(ctx, "request", mockInfo, handler)
@@ -149,7 +155,7 @@ func TestRecoveryInterceptor(t *testing.T) {
 	t.Run("NoPanic", func(t *testing.T) {
 		resp, err := recoveryInterceptor(context.Background(), "request", mockInfo, mockHandler)
 		require.NoError(t, err)
-		assert.Equal(t, "response", resp)
+		assert.Equal(t, mockResponse, resp)
 	})
 }
 
@@ -187,14 +193,14 @@ func TestValidateInterceptor(t *testing.T) {
 		req := "not a validator"
 		resp, err := validateUnaryInterceptor(context.Background(), req, mockInfo, mockHandler)
 		assert.NoError(t, err)
-		assert.Equal(t, "response", resp)
+		assert.Equal(t, mockResponse, resp)
 	})
 
 	t.Run("ValidRequest", func(t *testing.T) {
 		req := &mockValidator{err: nil}
 		resp, err := validateUnaryInterceptor(context.Background(), req, mockInfo, mockHandler)
 		assert.NoError(t, err)
-		assert.Equal(t, "response", resp)
+		assert.Equal(t, mockResponse, resp)
 	})
 
 	t.Run("SingleError", func(t *testing.T) {
@@ -236,12 +242,12 @@ func TestLoggerInterceptor(t *testing.T) {
 	t.Run("SuccessfulCall", func(t *testing.T) {
 		resp, err := loggerInterceptor(context.Background(), "request", mockInfo, mockHandler)
 		assert.NoError(t, err)
-		assert.Equal(t, "response", resp)
+		assert.Equal(t, mockResponse, resp)
 	})
 
 	t.Run("FailedCall", func(t *testing.T) {
 		expectedErr := status.Error(codes.NotFound, "not found")
-		ctx := context.WithValue(context.Background(), "handler-error", expectedErr)
+		ctx := context.WithValue(context.Background(), handlerErrorKey, expectedErr)
 		_, err := loggerInterceptor(ctx, "request", mockInfo, mockHandler)
 		assert.Error(t, err)
 		assert.Equal(t, expectedErr, err)

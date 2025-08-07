@@ -10,6 +10,7 @@ import (
 
 	"github.com/arwoosa/vulpes/codec"
 	"github.com/arwoosa/vulpes/log"
+
 	"github.com/gorilla/sessions"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -114,8 +115,10 @@ func getBoolFromServerMetadata(md runtime.ServerMetadata, name string, defaultVa
 	return strings.ToLower(boolString) == valueTrue
 }
 
-var errSessionNotFoundInContext = fmt.Errorf("%w: session not found in context", ErrSessionNotFound)
-var errRequestNotFoundInContext = fmt.Errorf("%w: request not found in context", ErrSessionNotFound)
+var (
+	errSessionNotFoundInContext = fmt.Errorf("%w: session not found in context", ErrSessionNotFound)
+	errRequestNotFoundInContext = fmt.Errorf("%w: request not found in context", ErrSessionNotFound)
+)
 
 // saveSession saves session data to the session store.
 func saveSession(ctx context.Context, response http.ResponseWriter, data string) error {
@@ -139,9 +142,9 @@ func saveSession(ctx context.Context, response http.ResponseWriter, data string)
 func deleteSession(ctx context.Context, response http.ResponseWriter) error {
 	session, ok := getSessionFromCtx(ctx)
 	if !ok {
-
 		return errSessionNotFoundInContext
 	}
+
 	req, ok := getRequestFromCtx(ctx)
 	if !ok {
 		return errRequestNotFoundInContext

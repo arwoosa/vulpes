@@ -9,6 +9,11 @@ import (
 	"github.com/arwoosa/vulpes/log"
 )
 
+const (
+	keyTypeString = "string"
+	keyTypeHash   = "hash"
+)
+
 // ScanExecute iterates through keys in the cache matching a given pattern and executes a function for each key
 // that can be successfully deserialized into the generic type T.
 // It supports keys stored as JSON strings or Hashes.
@@ -38,7 +43,7 @@ func ScanExecute[T any](ctx context.Context, pattern string, f func(key string, 
 		var success bool
 
 		switch keyType {
-		case "string":
+		case keyTypeString:
 			// For strings, assume the value is a JSON-encoded object.
 			valStr, err := conn.Get(ctx, key).Result()
 			if err != nil {
@@ -50,7 +55,7 @@ func ScanExecute[T any](ctx context.Context, pattern string, f func(key string, 
 			}
 			// If unmarshal fails, we assume it's not the target type and just continue.
 
-		case "hash":
+		case keyTypeHash:
 			// For hashes, scan the fields directly into the struct.
 			if err := conn.HGetAll(ctx, key).Scan(&value); err == nil {
 				success = true
@@ -101,7 +106,7 @@ func DeleteAfterScanExecuteInt(ctx context.Context, pattern string, f func(key s
 			log.Warn(fmt.Sprintf("Error getting type for key %s: %v", key, err))
 			continue
 		}
-		if keyType != "string" {
+		if keyType != keyTypeString {
 			continue
 		}
 

@@ -2,7 +2,6 @@ package mgo
 
 import (
 	"context"
-
 	"errors"
 
 	"go.mongodb.org/mongo-driver/v2/bson"

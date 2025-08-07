@@ -11,8 +11,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var RedirectResponseOption = runtime.WithForwardResponseOption(redirectResponseOptionHandler)
-var RedirectResponseModifier = runtime.WithForwardResponseRewriter(redirectResponseModifierHandler)
+var (
+	RedirectResponseOption   = runtime.WithForwardResponseOption(redirectResponseOptionHandler)
+	RedirectResponseModifier = runtime.WithForwardResponseRewriter(redirectResponseModifierHandler)
+)
 
 const redirectHeader = "Location"
 

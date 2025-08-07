@@ -46,7 +46,6 @@ func QuerySubjectByObjectRelation(ctx context.Context, namespace, object, relati
 			Relation:  relation,
 		},
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrReadFailed, err)
 	}

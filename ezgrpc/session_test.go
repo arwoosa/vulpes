@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/arwoosa/vulpes/codec"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 )

@@ -5,12 +5,12 @@ package interceptor
 import (
 	"context"
 
+	"github.com/arwoosa/vulpes/log"
+
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
-
-	"github.com/arwoosa/vulpes/log"
-	"github.com/google/uuid"
 )
 
 // RequestIDKey is the key used for the request ID in gRPC metadata.

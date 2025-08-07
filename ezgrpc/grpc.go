@@ -12,7 +12,9 @@ import (
 
 	"github.com/arwoosa/vulpes/ezgrpc/interceptor"
 	"github.com/arwoosa/vulpes/log"
+
 	"github.com/gorilla/mux"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/http2"
@@ -21,8 +23,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 )
 
 // Constants for user-related metadata keys.

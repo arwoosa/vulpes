@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/arwoosa/vulpes/log"
+
 	pb "github.com/ory/keto/proto/ory/keto/relation_tuples/v1alpha2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
