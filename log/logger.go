@@ -25,6 +25,7 @@ type Config struct {
 	Development bool   // Development mode enables colored, human-readable output.
 	Level       string // Level sets the minimum log level (e.g., "debug", "info", "warn", "error").
 	CallerSkip  int    // CallerSkip controls the number of stack frames to skip when logging.
+	ServiceName string // ServiceName is the name of the service logging.
 }
 
 // defaultConfig provides a sensible default configuration for the logger.
@@ -78,7 +79,11 @@ func _Init(cfg Config) {
 		}
 		// AddCallerSkip(2) is used to make the caller information point to the actual call site
 		// (e.g., log.Info) rather than the wrapper function inside this package.
-		baseLogger = baseLogger.WithOptions(zap.AddCallerSkip(cfg.CallerSkip))
+		baseLogger = baseLogger.
+			WithOptions(zap.AddCallerSkip(cfg.CallerSkip))
+		if cfg.ServiceName != "" {
+			baseLogger = baseLogger.With(zap.String("service", cfg.ServiceName))
+		}
 
 		sugar = baseLogger.Sugar()
 	})

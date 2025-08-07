@@ -156,7 +156,7 @@ func RunGrpcGateway(ctx context.Context, port int) error {
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
-	log.Info("Serving on", log.Int("port", port))
+	log.Info("Serving on port " + portStr)
 	return gwServer.Serve(lis)
 }
 

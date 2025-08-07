@@ -29,3 +29,10 @@ func WithCallerSkip(skip int) Option {
 		cfg.CallerSkip = skip
 	}
 }
+
+// WithServiceName sets the name of the service that is logging.
+func WithServiceName(name string) Option {
+	return func(cfg *Config) {
+		cfg.ServiceName = name
+	}
+}
