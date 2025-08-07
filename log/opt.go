@@ -22,3 +22,10 @@ func WithLevel(level string) Option {
 		cfg.Level = level
 	}
 }
+
+// WithCallerSkip sets the number of stack frames to skip when logging caller info.
+func WithCallerSkip(skip int) Option {
+	return func(cfg *Config) {
+		cfg.CallerSkip = skip
+	}
+}

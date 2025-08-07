@@ -24,12 +24,14 @@ var (
 type Config struct {
 	Development bool   // Development mode enables colored, human-readable output.
 	Level       string // Level sets the minimum log level (e.g., "debug", "info", "warn", "error").
+	CallerSkip  int    // CallerSkip controls the number of stack frames to skip when logging.
 }
 
 // defaultConfig provides a sensible default configuration for the logger.
 var defaultConfig = Config{
 	Development: true,
 	Level:       "debug",
+	CallerSkip:  2,
 }
 
 // SetConfig applies user-defined options to the default logger configuration.
@@ -76,7 +78,7 @@ func _Init(cfg Config) {
 		}
 		// AddCallerSkip(2) is used to make the caller information point to the actual call site
 		// (e.g., log.Info) rather than the wrapper function inside this package.
-		baseLogger = baseLogger.WithOptions(zap.AddCallerSkip(2))
+		baseLogger = baseLogger.WithOptions(zap.AddCallerSkip(cfg.CallerSkip))
 
 		sugar = baseLogger.Sugar()
 	})
