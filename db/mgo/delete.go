@@ -16,7 +16,7 @@ func DeleteMany(ctx context.Context, cname string, filter bson.D) (int64, error)
 	return result.DeletedCount, nil
 }
 
-func DeleteById(ctx context.Context, cname string, id string) (int64, error) {
+func DeleteById(ctx context.Context, cname string, id any) (int64, error) {
 	collection := GetCollection(cname)
 	result, err := collection.DeleteOne(ctx, bson.D{{Key: "_id", Value: id}})
 	if err != nil {
