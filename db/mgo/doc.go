@@ -11,27 +11,5 @@ type DocInter interface {
 	// Validate performs business logic validation on the document's fields.
 	Validate() error
 	GetId() any
-}
-
-// DocSlice represents a collection of documents that all conform to the DocInter interface.
-type DocSlice []DocInter
-
-// NewDocSlice creates and returns an empty DocSlice, ready to be populated.
-func NewDocSlice() DocSlice {
-	return DocSlice{}
-}
-
-// Append adds a new document to the slice.
-func (d *DocSlice) Append(doc DocInter) {
-	*d = append(*d, doc)
-}
-
-// Len returns the total number of documents in the slice.
-func (d DocSlice) Len() int {
-	return len(d)
-}
-
-// Get retrieves a document from the slice at the specified index.
-func (d DocSlice) Get(i int) DocInter {
-	return d[i]
+	SetId(any)
 }
