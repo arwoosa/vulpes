@@ -2,7 +2,7 @@ package mgo
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -17,12 +17,12 @@ func PipeFind[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) ([]T, 
 	collection := GetCollection(aggr.C())
 	sortCursor, err := collection.Aggregate(ctx, aggr.GetPipeline(filter))
 	if err != nil {
-		return nil, errors.Join(err, ErrReadFailed)
+		return nil, fmt.Errorf("%w: %w", ErrReadFailed, err)
 	}
 	var slice []T
 	err = sortCursor.All(ctx, &slice)
 	if err != nil {
-		return nil, errors.Join(err, ErrReadFailed)
+		return nil, fmt.Errorf("%w: %w", ErrReadFailed, err)
 	}
 	return slice, nil
 }
