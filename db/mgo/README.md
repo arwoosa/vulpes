@@ -138,9 +138,9 @@ func main() {
 
 	fmt.Println("Successfully connected to MongoDB.")
 
-	// 2. Create indexes for any new collections.
-	if err := mgo.CreateIndexesIfNotExists(ctx); err != nil {
-		log.Fatalf("Failed to create indexes: %v", err)
+	// 2. Sync indexes for all registered models.
+	if err := mgo.SyncIndexes(ctx); err != nil {
+		log.Fatalf("Failed to sync indexes: %v", err)
 	}
 	fmt.Println("Indexes are up to date.")
 
