@@ -2,6 +2,9 @@ package mgo
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"reflect"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -146,6 +149,13 @@ func NewErrOnFindOne(err error) func(ctx context.Context, collection string, fil
 // It assigns a new ObjectID to the document and returns it.
 func NewOnSaveMock() func(ctx context.Context, doc DocInter) (DocInter, error) {
 	return func(ctx context.Context, doc DocInter) (DocInter, error) {
+		// 1. Restore the nil check for robustness.
+		if v := reflect.ValueOf(doc); v.Kind() == reflect.Ptr && v.IsNil() {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidDocument, errors.New("document cannot be nil"))
+		}
+		if err := doc.Validate(); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidDocument, err)
+		}
 		doc.SetId(bson.NewObjectID())
 		return doc, nil
 	}
