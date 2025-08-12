@@ -17,7 +17,7 @@ The primary goal of this package is to promote a consistent, maintainable, and s
 - **Functional Options**: Provides a clean, flexible API for configuring the database connection and for constructing model instances.
 - **Self-Describing Models**: The `DocInter` and `Index` interfaces encourage models to be self-contained and aware of their database schema.
 - **Automatic Index Creation**: On application startup, automatically creates necessary indexes for collections that don't yet exist.
-- **Safe Batch Operations**: Includes a `BatchSave` function for safely and efficiently inserting multiple documents at once.
+- **Fluent Bulk Operations**: Provides a `BulkOperation` builder for safely and efficiently executing multiple `insert`, `update`, or `delete` operations in a single request.
 
 ## How to Use
 
@@ -61,8 +61,8 @@ func init() {
 type User struct {
 	mgo.Index   `bson:"-"` // Embed the Index interface, ignored by BSON marshalling.
 	ID        bson.ObjectID `bson:"_id,omitempty"`
-	Name      string        `bson:"name" validate:"required"`
-	Email     string        `bson:"email" validate:"required,email"`
+	Name      string        `bson:"name" validate:"required"
+	Email     string        `bson:"email" validate:"required,email"
 }
 
 // Validate implements the validation logic for a User.
@@ -138,41 +138,28 @@ func main() {
 
 	fmt.Println("Successfully connected to MongoDB.")
 
-	// 2. Create indexes for any new collections.
-	if err := mgo.CreateIndexesIfNotExists(ctx); err != nil {
-		log.Fatalf("Failed to create indexes: %v", err)
+	// 2. Sync indexes for all registered models.
+	if err := mgo.SyncIndexes(ctx); err != nil {
+		log.Fatalf("Failed to sync indexes: %v", err)
 	}
 	fmt.Println("Indexes are up to date.")
 
-	// 3. Example: Batch saving documents using the constructor.
-	docs := mgo.NewDocSlice()
-	docs.Append(models.NewUser(
+	// 3. Example: Performing a bulk operation.
+	bulkOp := mgo.NewBulkOperation("users")
+	bulkOp.InsertOne(models.NewUser(
 		models.WithUserName("Peter"),
 		models.WithUserEmail("peter@example.com"),
 	))
-	docs.Append(models.NewUser(
+	bulkOp.InsertOne(models.NewUser(
 		models.WithUserName("Alice"),
 		models.WithUserEmail("alice@example.com"),
 	))
+	// You can also chain other operations like Update or Delete
+	// bulkOp.UpdateById(someId, bson.D{{"$set", bson.M{{"name": "New Name"}}}})
 
-	insertedCount, err := mgo.BatchSave(ctx, docs)
+	result, err := bulkOp.Execute(ctx)
 	if err != nil {
-		log.Fatalf("Batch save failed: %v", err)
+		log.Fatalf("Bulk operation failed: %v", err)
 	}
-	fmt.Printf("Successfully inserted %d documents.\n", insertedCount)
-
-	// 4. Example: Getting a collection handle for other operations.
-	userCollection := mgo.GetCollection("users")
-	fmt.Printf("Got a handle for the '%s' collection.\n", userCollection.Name())
+	fmt.Printf("Successfully inserted %d documents.\n", result.InsertedCount)
 }
-```
-
-## API Reference
-
-- `InitConnection(ctx, dbName, opts...) error`: Initializes the global MongoDB connection.
-- `Close(ctx) error`: Closes the global connection.
-- `GetCollection(name string) *mongo.Collection`: Retrieves a handle for a specific collection.
-- `NewCollectDef(name, indexesFn) Index`: Creates a reusable collection schema definition.
-- `RegisterIndex(index Index)`: Registers a model's index definition.
-- `CreateIndexesIfNotExists(ctx) error`: Creates all registered indexes that do not already exist.
-- `BatchSave(ctx, doclist DocSlice) (int64, error)`: Performs a bulk insert of documents.

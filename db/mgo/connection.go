@@ -13,18 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-var (
-	// conn holds the singleton instance of the database connection.
-	conn *Connection
-	// once guarantees that the initialization of the connection happens only once.
-	once sync.Once
-)
-
-// Connection encapsulates the core MongoDB client and database objects.
-type Connection struct {
-	clt *mongo.Client
-	db  *mongo.Database
-}
+var once sync.Once
 
 // Option defines a function signature for configuring the MongoDB client.
 // This follows the functional options pattern, allowing for flexible and clear configuration.
@@ -91,10 +80,8 @@ func InitConnection(ctx context.Context, dbName string, opts ...Option) error {
 			return
 		}
 
-		// Assign the successfully established client and database to the singleton.
-		conn = &Connection{
-			clt: client,
-			db:  client.Database(dbName),
+		dataStore = &mongoStore{
+			db: client.Database(dbName),
 		}
 	})
 
@@ -104,14 +91,8 @@ func InitConnection(ctx context.Context, dbName string, opts ...Option) error {
 // Close gracefully disconnects the client from the MongoDB server.
 // It should be called at the end of the application's lifecycle, for example, using defer in main.
 func Close(ctx context.Context) error {
-	if conn == nil || conn.clt == nil {
-		return nil
+	if dataStore != nil {
+		return dataStore.close(ctx)
 	}
-	return conn.clt.Disconnect(ctx)
-}
-
-// GetCollection returns a handle to a specific collection in the database.
-// This allows for direct interaction with the collection using the official driver's API.
-func GetCollection(name string) *mongo.Collection {
-	return conn.db.Collection(name)
+	return nil
 }

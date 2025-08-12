@@ -3,16 +3,43 @@ package mgo
 import (
 	"context"
 	"errors"
-
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"fmt"
+	"reflect"
 )
 
-func Save(ctx context.Context, doc DocInter) (string, error) {
-	collection := GetCollection(doc.C())
-	result, err := collection.InsertOne(ctx, doc)
-	if err != nil {
-		return "", errors.Join(ErrWriteFailed, err)
+func Save[T DocInter](ctx context.Context, doc T) (T, error) {
+	var zero T
+	if dataStore == nil {
+		return zero, ErrNotConnected
 	}
-	oid, _ := result.InsertedID.(bson.ObjectID)
-	return oid.Hex(), nil
+	newDoc, err := dataStore.Save(ctx, doc)
+	if err != nil {
+		return zero, fmt.Errorf("%w: %w", ErrWriteFailed, err)
+	}
+	result, ok := newDoc.(T)
+	if !ok {
+		return zero, fmt.Errorf("%w: failed to cast to %T", ErrWriteFailed, doc)
+	}
+	return result, nil
+}
+
+func (m *mongoStore) Save(ctx context.Context, doc DocInter) (DocInter, error) {
+	// 1. Restore the nil check for robustness.
+	if v := reflect.ValueOf(doc); v.Kind() == reflect.Ptr && v.IsNil() {
+		return nil, errors.Join(ErrInvalidDocument, errors.New("document cannot be nil"))
+	}
+
+	// 2. Restore the validation check.
+	if err := doc.Validate(); err != nil {
+		return doc, fmt.Errorf("%w: %w", ErrInvalidDocument, err)
+	}
+
+	// 3. Perform the database operation.
+	c := m.getCollection(doc.C())
+	result, err := c.InsertOne(ctx, doc)
+	if err != nil {
+		return doc, fmt.Errorf("%w: %w", ErrWriteFailed, err)
+	}
+	doc.SetId(result.InsertedID)
+	return doc, nil
 }
