@@ -176,5 +176,5 @@ func main() {
 - `GetCollection(name string) *mongo.Collection`: Retrieves a handle for a specific collection.
 - `NewCollectDef(name, indexesFn) Index`: Creates a reusable collection schema definition.
 - `RegisterIndex(index Index)`: Registers a model's index definition.
-- `CreateIndexesIfNotExists(ctx) error`: Creates all registered indexes that do not already exist.
+- `SyncIndexes(ctx) error`: Ensures that all registered indexes are present in the database.
 - `NewBulkOperation(cname string) *BulkOperation`: Creates a builder for performing bulk write operations.
