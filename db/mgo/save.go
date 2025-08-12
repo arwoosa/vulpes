@@ -26,7 +26,7 @@ func Save[T DocInter](ctx context.Context, doc T) (T, error) {
 func (m *mongoStore) Save(ctx context.Context, doc DocInter) (DocInter, error) {
 	// 1. Restore the nil check for robustness.
 	if v := reflect.ValueOf(doc); v.Kind() == reflect.Ptr && v.IsNil() {
-		return nil, errors.Join(ErrInvalidDocument, errors.New("document cannot be nil"))
+		return nil, fmt.Errorf("%w: %w", ErrInvalidDocument, errors.New("document cannot be nil"))
 	}
 
 	// 2. Restore the validation check.

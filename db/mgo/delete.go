@@ -7,6 +7,15 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+// DeleteOne deletes a single document matching the filter.
+// doc: An instance of the document type, used to determine the collection.
+func DeleteOne[T DocInter](ctx context.Context, doc T, filter bson.D) (int64, error) {
+	if dataStore == nil {
+		return 0, ErrNotConnected
+	}
+	return dataStore.DeleteOne(ctx, doc.C(), filter)
+}
+
 // DeleteMany deletes all documents matching the filter.
 // doc: An instance of the document type, used to determine the collection.
 func DeleteMany[T DocInter](ctx context.Context, doc T, filter bson.D) (int64, error) {
