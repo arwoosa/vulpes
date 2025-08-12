@@ -13,12 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-var (
-	// conn holds the singleton instance of the database connection.
-	// conn *Connection
-	// once guarantees that the initialization of the connection happens only once.
-	once sync.Once
-)
+var once sync.Once
 
 // Option defines a function signature for configuring the MongoDB client.
 // This follows the functional options pattern, allowing for flexible and clear configuration.

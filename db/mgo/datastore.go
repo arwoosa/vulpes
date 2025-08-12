@@ -28,6 +28,7 @@ type Datastore interface {
 type BulkOperator interface {
 	InsertOne(doc DocInter) BulkOperator
 	UpdateOne(filter any, update any) BulkOperator
+	UpdateById(id any, update any) BulkOperator
 
 	Execute(ctx context.Context) (*mongo.BulkWriteResult, error)
 }
