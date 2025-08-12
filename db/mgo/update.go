@@ -26,8 +26,14 @@ func UpdateById[T DocInter](ctx context.Context, doc T, update bson.D) (int64, e
 // filter: The filter to select the document to update.
 // update: The update document, e.g., bson.D{{"$set", bson.D{{"field", "value"}}}}.
 func UpdateOne[T DocInter](ctx context.Context, doc T, filter bson.D, update bson.D) (int64, error) {
-	collection := GetCollection(doc.C())
-	result, err := collection.UpdateOne(ctx, filter, update)
+	if dataStore == nil {
+		return 0, ErrNotConnected
+	}
+	return dataStore.UpdateOne(ctx, doc.C(), filter, update)
+}
+
+func (m *mongoStore) UpdateOne(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error) {
+	result, err := m.getCollection(collection).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %v", ErrWriteFailed, err)
 	}

@@ -162,19 +162,4 @@ func main() {
 		log.Fatalf("Bulk operation failed: %v", err)
 	}
 	fmt.Printf("Successfully inserted %d documents.\n", result.InsertedCount)
-
-	// 4. Example: Getting a collection handle for other operations.
-	userCollection := mgo.GetCollection("users")
-	fmt.Printf("Got a handle for the '%s' collection.\n", userCollection.Name())
 }
-```
-
-## API Reference
-
-- `InitConnection(ctx, dbName, opts...) error`: Initializes the global MongoDB connection.
-- `Close(ctx) error`: Closes the global connection.
-- `GetCollection(name string) *mongo.Collection`: Retrieves a handle for a specific collection.
-- `NewCollectDef(name, indexesFn) Index`: Creates a reusable collection schema definition.
-- `RegisterIndex(index Index)`: Registers a model's index definition.
-- `SyncIndexes(ctx) error`: Ensures that all registered indexes are present in the database.
-- `NewBulkOperation(cname string) *BulkOperation`: Creates a builder for performing bulk write operations.

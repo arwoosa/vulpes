@@ -60,7 +60,7 @@ func RegisterIndex(index Index) {
 // create indexes that do not already exist and will not change existing ones.
 // This is a safe and effective way to keep code-defined schemas and the database in sync.
 func SyncIndexes(ctx context.Context) error {
-	if conn == nil {
+	if dataStore == nil {
 		return ErrNotConnected
 	}
 
@@ -72,7 +72,7 @@ func SyncIndexes(ctx context.Context) error {
 		}
 
 		// Get the index view for the collection.
-		indexView := conn.db.Collection(index.C()).Indexes()
+		indexView := dataStore.getCollection(index.C()).Indexes()
 
 		// Create the defined indexes. This command is idempotent.
 		_, err := indexView.CreateMany(ctx, index.Indexes())
