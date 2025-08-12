@@ -16,7 +16,11 @@ func Save[T DocInter](ctx context.Context, doc T) (T, error) {
 	if err != nil {
 		return zero, fmt.Errorf("%w: %w", ErrWriteFailed, err)
 	}
-	return newDoc.(T), nil
+	result, ok := newDoc.(T)
+	if !ok {
+		return zero, fmt.Errorf("%w: failed to cast to %T", ErrWriteFailed, doc)
+	}
+	return result, nil
 }
 
 func (m *mongoStore) Save(ctx context.Context, doc DocInter) (DocInter, error) {

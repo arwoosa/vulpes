@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/arwoosa/vulpes/log"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -29,6 +31,7 @@ func NewBulkOperation(cname string) (BulkOperator, error) {
 // The provided document will be validated before being added.
 func (b *bulkOperation) InsertOne(doc DocInter) BulkOperator {
 	if err := doc.Validate(); err != nil {
+		log.Warn("Invalid document in bulk operation: " + err.Error())
 		// To maintain the fluent API, we don't return an error here.
 		// The error will be caught by the driver during Execute.
 		// Consider pre-validating documents before adding them to the bulk operation.
