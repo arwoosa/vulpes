@@ -32,6 +32,7 @@ const (
 	keyUserEmail    = "user-email"
 	keyUserName     = "user-name"
 	keyUserLanguage = "user-language"
+	keyBrandID      = "brand-id"
 )
 
 var (
@@ -48,6 +49,7 @@ var (
 		"x-user-email":    keyUserEmail,
 		"x-user-name":     keyUserName,
 		"x-user-language": keyUserLanguage,
+		"x-brand-id":      keyBrandID,
 	}
 
 	// DefaultHeaderMatcher is a grpc-gateway option that maps incoming HTTP headers to gRPC metadata.
