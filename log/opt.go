@@ -36,3 +36,10 @@ func WithServiceName(name string) Option {
 		cfg.ServiceName = name
 	}
 }
+
+// WithEnv sets the environment the service is running in.
+func WithEnv(env string) Option {
+	return func(cfg *Config) {
+		cfg.Env = env
+	}
+}
