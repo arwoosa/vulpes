@@ -32,6 +32,7 @@ const (
 	keyUserEmail    = "user-email"
 	keyUserName     = "user-name"
 	keyUserLanguage = "user-language"
+	keyMerchantID   = "merchant-id"
 )
 
 var (
@@ -48,6 +49,7 @@ var (
 		"x-user-email":    keyUserEmail,
 		"x-user-name":     keyUserName,
 		"x-user-language": keyUserLanguage,
+		"x-merchant-id":   keyMerchantID,
 	}
 
 	// DefaultHeaderMatcher is a grpc-gateway option that maps incoming HTTP headers to gRPC metadata.
@@ -79,6 +81,7 @@ type user struct {
 	Email    string
 	Name     string
 	Language string
+	Merchant string
 }
 
 // GetUser extracts user information from the incoming gRPC context.
@@ -97,6 +100,7 @@ func GetUser(ctx context.Context) (*user, error) {
 		Email:    getMetadataString(md, keyUserEmail),
 		Name:     getMetadataString(md, keyUserName),
 		Language: getMetadataString(md, keyUserLanguage),
+		Merchant: getMetadataString(md, keyMerchantID),
 	}, nil
 }
 
