@@ -24,7 +24,7 @@ const defaultConnTimeout = 10 * time.Second
 
 type client struct {
 	conns    map[string]*grpc.ClientConn
-	services map[string]*serviceInfo
+	services map[string]ServiceInvoker
 	mu       sync.RWMutex
 	timeout  time.Duration
 }
@@ -53,7 +53,7 @@ func WithTimeout(timeout time.Duration) Option {
 func NewClient(opts ...Option) Client {
 	c := &client{
 		conns:    make(map[string]*grpc.ClientConn),
-		services: make(map[string]*serviceInfo),
+		services: make(map[string]ServiceInvoker),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -64,39 +64,25 @@ func NewClient(opts ...Option) Client {
 	return c
 }
 
+func (c *client) Close() error {
+	var firstErr error
+	for addr, conn := range c.conns {
+		if err := conn.Close(); err != nil && firstErr == nil {
+			firstErr = fmt.Errorf("failed to close connection to %s: %w", addr, err)
+		}
+	}
+	return firstErr
+}
+
 func (c *client) Invoke(ctx context.Context, addr, service, method string, jsonbody []byte) ([]byte, error) {
-	info, err := c.getServiceInfo(addr, service)
+	serviceInvoker, err := c.GetServiceInvoker(ctx, addr, service)
 	if err != nil {
 		return nil, fmt.Errorf("%w:failed to get gRPC service info for service '%s' at '%s': %w", ErrServiceNotFound, service, addr, err)
 	}
-
-	methodInfo, ok := info.Methods[method]
-	if !ok {
-		return nil, fmt.Errorf("%w: method '%s' not found in service '%s'", ErrMethodNotFound, method, service)
-	}
-
-	if methodInfo.IsStream {
-		return nil, fmt.Errorf("streaming RPCs are not supported (method: '%s')", method)
-	}
-
-	requestProto := dynamicpb.NewMessage(methodInfo.InputType)
-	if jsonbody != nil {
-		if err := protojson.Unmarshal(jsonbody, requestProto); err != nil {
-			return nil, fmt.Errorf("%w: failed to unmarshal JSON into request: %w", ErrInvalidRequest, err)
-		}
-	}
-	responseProto := dynamicpb.NewMessage(methodInfo.OutputType)
-	fullMethod := fmt.Sprintf("/%s/%s", service, method)
-
-	if err := info.conn.Invoke(ctx, fullMethod, requestProto, responseProto); err != nil {
-		log.Errorf("Error Invoke service  '%s': gRPC call failed: %v", fullMethod, err)
-		return nil, err
-	}
-
-	return protojson.Marshal(responseProto)
+	return serviceInvoker.Invoke(ctx, method, jsonbody)
 }
 
-func (c *client) getServiceInfo(address, serviceName string) (*serviceInfo, error) {
+func (c *client) GetServiceInvoker(ctx context.Context, address, serviceName string) (ServiceInvoker, error) {
 	cacheKey := address + "/" + serviceName
 
 	// Check cache first with a read lock.
@@ -123,7 +109,7 @@ func (c *client) getServiceInfo(address, serviceName string) (*serviceInfo, erro
 		return nil, err
 	}
 
-	fetchedInfo, err := c.fetchServiceInfoFromServer(conn, serviceName)
+	fetchedInfo, err := c.fetchServiceInfoFromServer(ctx, conn, serviceName)
 	if err != nil {
 		// Don't close the connection here, as it might be shared.
 		// Connections are only closed by the Client's Close() method.
@@ -131,9 +117,10 @@ func (c *client) getServiceInfo(address, serviceName string) (*serviceInfo, erro
 	}
 
 	fetchedInfo.conn = conn
-	c.services[cacheKey] = fetchedInfo // Cache the newly fetched info.
+	invoker := newServiceInvoker(fetchedInfo)
+	c.services[cacheKey] = invoker // Cache the newly fetched info.
 
-	return fetchedInfo, nil
+	return invoker, nil
 }
 
 func (c *client) getOrCreateConn(address string) (*grpc.ClientConn, error) {
@@ -160,10 +147,7 @@ func (c *client) getOrCreateConn(address string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func (c *client) fetchServiceInfoFromServer(conn *grpc.ClientConn, serviceName string) (*serviceInfo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
+func (c *client) fetchServiceInfoFromServer(ctx context.Context, conn *grpc.ClientConn, serviceName string) (*serviceInfo, error) {
 	reflectClient := rppb.NewServerReflectionClient(conn)
 	stream, err := reflectClient.ServerReflectionInfo(ctx, grpc.WaitForReady(true))
 	if err != nil {
@@ -239,4 +223,46 @@ func parseServiceDescriptor(fileDescriptorProtos []*descriptorpb.FileDescriptorP
 		Name:    string(targetService.FullName()),
 		Methods: methods,
 	}, nil
+}
+
+func newServiceInvoker(info *serviceInfo) ServiceInvoker {
+	return &serviceInvoker{info: info}
+}
+
+type serviceInvoker struct {
+	info *serviceInfo
+}
+
+func (s *serviceInvoker) Invoke(ctx context.Context, method string, jsonbody []byte) ([]byte, error) {
+	info := s.info
+	methodInfo, ok := info.Methods[method]
+	service := info.Name
+	if !ok {
+		return nil, fmt.Errorf("%w: method '%s' not found in service '%s'", ErrMethodNotFound, method, service)
+	}
+
+	if methodInfo.IsStream {
+		return nil, fmt.Errorf("streaming RPCs are not supported (method: '%s')", method)
+	}
+
+	requestProto := dynamicpb.NewMessage(methodInfo.InputType)
+	if jsonbody != nil {
+		if err := protojson.Unmarshal(jsonbody, requestProto); err != nil {
+			return nil, fmt.Errorf("%w: failed to unmarshal JSON into request: %w", ErrInvalidRequest, err)
+		}
+	}
+	responseProto := dynamicpb.NewMessage(methodInfo.OutputType)
+	fullMethod := fmt.Sprintf("/%s/%s", service, method)
+
+	if err := info.conn.Invoke(ctx, fullMethod, requestProto, responseProto); err != nil {
+		log.Errorf("Error Invoke service  '%s': gRPC call failed: %v", fullMethod, err)
+		return nil, err
+	}
+
+	return protojson.Marshal(responseProto)
+}
+
+func (s *serviceInvoker) IsMethodExists(methodName string) bool {
+	_, ok := s.info.Methods[methodName]
+	return ok
 }

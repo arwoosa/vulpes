@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/arwoosa/vulpes/ezgrpc/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,6 +19,14 @@ type mockClient struct {
 // Invoke simulates the behavior of the real client's Invoke method.
 func (m *mockClient) Invoke(ctx context.Context, address, serviceName, methodName string, req []byte) ([]byte, error) {
 	return m.resp, m.err
+}
+
+func (m *mockClient) Close() error {
+	return nil
+}
+
+func (m *mockClient) GetServiceInvoker(ctx context.Context, address, serviceName string) (client.ServiceInvoker, error) {
+	return nil, nil
 }
 
 // func TestRealInvoke(t *testing.T) {

@@ -37,6 +37,10 @@ func Invoke[T any, R any](ctx context.Context, addr, service, method string, req
 	return zeroR, nil
 }
 
+func Close() error {
+	return grpcClt.Close()
+}
+
 func isNil[T any](v T) bool {
 	if any(v) == nil {
 		return true
