@@ -148,69 +148,142 @@ func main() {
 
 ### Session 管理
 
-您可以在任何 gRPC 處理程序中設定和讀取 Session 資料。`ezgrpc` 會自動處理 Cookie 的設定和讀取。
+You can set and read session data in any gRPC handler. `ezgrpc` automatically handles cookie setting and reading.
 
 ```go
-// MySessionData 是您自訂的 Session 結構
+// MySessionData is your custom session struct
 type MySessionData struct {
     UserID   string
     Username string
 }
 
-// 在登入處理程序中設定 Session
+// Set session in login handler
 func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-    // ... 驗證使用者 ...
+    // ... authenticate user ...
     session := MySessionData{UserID: "user-123", Username: "testuser"}
     if err := ezgrpc.SetSessionData(ctx, session); err != nil {
-        return nil, status.Error(codes.Internal, "無法設定 Session")
+        return nil, status.Error(codes.Internal, "Failed to set session")
     }
     return &pb.LoginResponse{Success: true}, nil
 }
 
-// 在需要驗證的端點讀取 Session
+// Read session in protected endpoint
 func (s *server) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.ProfileResponse, error) {
     session, err := ezgrpc.GetSessionData[MySessionData](ctx)
     if err != nil {
-        return nil, status.Error(codes.Unauthenticated, "未登入")
+        return nil, status.Error(codes.Unauthenticated, "Not logged in")
     }
-    // ... 使用 session.UserID 和 session.Username ...
+    // ... use session.UserID and session.Username ...
     return &pb.ProfileResponse{Id: session.UserID, Name: session.Username}, nil
 }
 ```
 
-### 使用者資訊傳遞
+### User Information Forwarding
 
-當客戶端向閘道發送帶有特定前綴的 HTTP Header 時，`ezgrpc` 會自動將它們轉發到 gRPC 的 context metadata 中。
+When clients send HTTP headers with specific prefixes to the gateway, `ezgrpc` automatically forwards them to the gRPC context metadata.
 
-支援的 Headers 包括：
+Supported Headers include:
 - `X-User-ID`
 - `X-User-Account`
 - `X-User-Email`
 - `X-User-Name`
 - `X-User-Language`
 
-在 gRPC 處理程序中，您可以這樣獲取使用者資訊：
+In your gRPC handler, you can retrieve user information like this:
 
 ```go
 func (s *server) MyHandler(ctx context.Context, req *pb.Request) (*pb.Response, error) {
     user, err := ezgrpc.GetUser(ctx)
     if err != nil {
-        // 處理錯誤
+        // Handle error
     }
     if user != nil {
-        log.Printf("請求來自使用者 ID: %s, 語言: %s", user.ID, user.Language)
+        log.Printf("Request from User ID: %s, Language: %s", user.ID, user.Language)
     }
     // ...
 }
 ```
 
-### 預設攔截器 (Interceptors)
+### Default Interceptors (Interceptors)
 
-`ezgrpc` 預設啟用了一系列攔截器，順序如下：
+`ezgrpc` enables a series of interceptors by default, in the following order:
 
-1.  **Recovery**: 捕獲 panic，防止伺服器崩潰。
-2.  **Prometheus**: 監控 gRPC 請求指標。
-3.  **RequestID**: 為每個請求產生唯一的 ID。
-4.  **Logger**: 記錄請求的詳細資訊，依賴 RequestID。
-5.  **RateLimit**: 基於 IP 的請求速率限制。
-6.  **Validation**: 自動驗證符合 `protoc-gen-validate` 規則的請求。
+1.  **Recovery**: Catches panics to prevent server crashes.
+2.  **Prometheus**: Monitors gRPC request metrics.
+3.  **RequestID**: Generates a unique ID for each request.
+4.  **Logger**: Logs detailed request information, relying on RequestID.
+5.  **RateLimit**: IP-based request rate limiting.
+6.  **Validation**: Automatically validates requests conforming to `protoc-gen-validate` rules.
+
+### Dynamic gRPC Client (`ezclient`)
+
+`ezgrpc` includes a dynamic gRPC client that allows you to call any gRPC service without relying on pre-compiled protobuf stubs (`.pb.go` files).
+
+This feature's core is **gRPC Server Reflection**. As long as the target gRPC server has reflection enabled, `ezclient` can automatically discover services, methods, and request/response message structures at runtime.
+
+> **Note**: When you start the server using `ezgrpc.RunGrpcGateway` or `ezgrpc.Run`, the reflection service is automatically enabled.
+
+#### Usage Example
+
+The following example demonstrates how to use the generic function `ezgrpc.Invoke` to call a gRPC service.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/arwoosa/vulpes/ezgrpc"
+)
+
+// Assume we want to call a service with a GetImageURI method
+// We don't need to import the service's .pb.go file, just define the request and response structs
+
+// ImageRequest defines the structure of the request
+type ImageRequest struct {
+	ID      string `json:"id"`
+	Variant string `json:"variant"`
+}
+
+// ImageResponse defines the expected response structure
+type ImageResponse struct {
+	URI string `json:"uri"`
+}
+
+func main() {
+	ctx := context.Background()
+
+	// Prepare request data
+	req := &ImageRequest{
+		ID:      "c2c8ea6c-e453-4805-455f-ad2079e02800",
+		Variant: "public",
+	}
+
+	// Call the remote method using ezgrpc.Invoke
+	resp, err := ezgrpc.Invoke[ImageRequest, ImageResponse](
+		ctx,
+		"localhost:8081",                 // gRPC server address
+		"mediaService.ImageService",      // Full service name (package.Service)
+		"GetImageURI",                    // Method name to call
+		req,                              // Request data
+	)
+
+	if err != nil {
+		log.Fatalf("gRPC call failed: %v", err)
+	}
+
+	fmt.Printf("Successfully received response: %+v\n", resp)
+	// Expected output: Successfully received response: {URI:http://path/to/your/image.jpg}
+}
+```
+
+`ezgrpc.Invoke` function accepts the following parameters:
+- `ctx`: `context.Context`.
+- `addr`: The address of the gRPC server, in the format `host:port`.
+- `service`: The full gRPC service name, in the format `package_name.ServiceName`.
+- `method`: The name of the method you want to call.
+- `req`: Your request data, which can be a struct or a map. `ezclient` will automatically serialize it to JSON.
+
+The response will be automatically deserialized from JSON into the generic type `R` you specified.
