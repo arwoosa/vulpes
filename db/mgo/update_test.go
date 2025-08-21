@@ -10,6 +10,34 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+// func TestPipeFindOne(t *testing.T) {
+// 	mgo.InitConnection(context.Background(), "test_db", mgo.WithURI("mongodb://mongodb.dev.orb.local:27017"))
+// 	defer mgo.Close(context.Background())
+// 	t.Run("Success", func(t *testing.T) {
+// 		// Arrange
+// 		expectedUser := testUser{ID: bson.NewObjectID(), Name: "Peter"}
+// 		savedUser, err := mgo.Save(context.Background(), &expectedUser)
+// 		assert.NoError(t, err)
+// 		assert.NotNil(t, savedUser)
+
+// 		// Act
+// 		aggr := &testAggregate{
+// 			CollectionName: "users",
+// 			Pipeline:       []bson.D{{{Key: "$match", Value: bson.D{{Key: "name", Value: "Peter"}}}}},
+// 		}
+// 		err = mgo.PipeFindOne(context.Background(), aggr, nil)
+// 		fmt.Println(aggr.Name, aggr.CollectionName)
+
+// 		foundUsers, err := mgo.PipeFind(context.Background(), aggr, nil)
+// 		fmt.Println(foundUsers, len(foundUsers))
+
+// 		// Assert
+// 		assert.NoError(t, err)
+// 		assert.Equal(t, expectedUser.Name, aggr.Name)
+// 		assert.False(t, true)
+// 	})
+// }
+
 func TestUpdateMany(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// Arrange

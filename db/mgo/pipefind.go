@@ -29,15 +29,15 @@ func PipeFind[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) ([]T, 
 	return slice, nil
 }
 
-func PipeFindOne[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) (T, error) {
+func PipeFindOne[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) error {
 	if dataStore == nil {
-		return aggr, ErrNotConnected
+		return ErrNotConnected
 	}
 	err := dataStore.PipeFindOne(ctx, aggr.C(), aggr.GetPipeline(filter)).Decode(&aggr)
 	if err != nil {
-		return aggr, fmt.Errorf("%w: %w", ErrReadFailed, err)
+		return fmt.Errorf("%w: %w", ErrReadFailed, err)
 	}
-	return aggr, nil
+	return nil
 }
 
 func (m *mongoStore) PipeFind(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error) {
