@@ -29,6 +29,17 @@ func PipeFind[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) ([]T, 
 	return slice, nil
 }
 
+func PipeFindOne[T MgoAggregate](ctx context.Context, aggr T, filter bson.M) (T, error) {
+	if dataStore == nil {
+		return aggr, ErrNotConnected
+	}
+	err := dataStore.PipeFindOne(ctx, aggr.C(), aggr.GetPipeline(filter)).Decode(&aggr)
+	if err != nil {
+		return aggr, fmt.Errorf("%w: %w", ErrReadFailed, err)
+	}
+	return aggr, nil
+}
+
 func (m *mongoStore) PipeFind(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error) {
 	c := m.getCollection(collection)
 	sortCursor, err := c.Aggregate(ctx, pipeline)
@@ -36,4 +47,16 @@ func (m *mongoStore) PipeFind(ctx context.Context, collection string, pipeline m
 		return nil, fmt.Errorf("%w: %w", ErrReadFailed, err)
 	}
 	return sortCursor, nil
+}
+
+func (m *mongoStore) PipeFindOne(ctx context.Context, collection string, pipeline mongo.Pipeline) *mongo.SingleResult {
+	c := m.getCollection(collection)
+	sortCursor, err := c.Aggregate(ctx, pipeline)
+	if err != nil {
+		return mongo.NewSingleResultFromDocument(bson.D{}, err, nil)
+	}
+	if !sortCursor.Next(ctx) {
+		return mongo.NewSingleResultFromDocument(bson.D{}, mongo.ErrNoDocuments, nil)
+	}
+	return mongo.NewSingleResultFromDocument(sortCursor.Current, nil, nil)
 }

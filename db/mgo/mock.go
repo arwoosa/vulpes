@@ -39,6 +39,7 @@ type MockDatastore struct {
 	OnDeleteOne        func(ctx context.Context, collection string, filter bson.D) (int64, error)
 	OnDeleteMany       func(ctx context.Context, collection string, filter bson.D) (int64, error)
 	OnPipeFind         func(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error)
+	OnPipeFindOne      func(ctx context.Context, collection string, pipeline mongo.Pipeline) *mongo.SingleResult
 	OnNewBulkOperation func(cname string) BulkOperator
 	OnGetCollection    func(name string) *mongo.Collection
 	OnClose            func(ctx context.Context) error
@@ -83,6 +84,10 @@ func (m *MockDatastore) DeleteMany(ctx context.Context, collection string, filte
 
 func (m *MockDatastore) PipeFind(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error) {
 	return m.OnPipeFind(ctx, collection, pipeline)
+}
+
+func (m *MockDatastore) PipeFindOne(ctx context.Context, collection string, pipeline mongo.Pipeline) *mongo.SingleResult {
+	return m.OnPipeFindOne(ctx, collection, pipeline)
 }
 
 func (m *MockDatastore) NewBulkOperation(cname string) BulkOperator {

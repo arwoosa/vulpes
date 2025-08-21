@@ -20,6 +20,8 @@ type Datastore interface {
 	DeleteMany(ctx context.Context, collection string, filter bson.D) (int64, error)
 
 	PipeFind(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error)
+	PipeFindOne(ctx context.Context, collection string, pipeline mongo.Pipeline) *mongo.SingleResult
+
 	NewBulkOperation(cname string) BulkOperator
 	getCollection(name string) *mongo.Collection
 	close(ctx context.Context) error
