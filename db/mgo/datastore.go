@@ -15,6 +15,7 @@ type Datastore interface {
 	Find(ctx context.Context, collection string, filter any, opts ...options.Lister[options.FindOptions]) (*mongo.Cursor, error)
 	FindOne(ctx context.Context, collection string, filter any, opts ...options.Lister[options.FindOneOptions]) *mongo.SingleResult
 	UpdateOne(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error)
+	UpdateMany(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error)
 	DeleteOne(ctx context.Context, collection string, filter bson.D) (int64, error)
 	DeleteMany(ctx context.Context, collection string, filter bson.D) (int64, error)
 

@@ -35,6 +35,7 @@ type MockDatastore struct {
 	OnFind             func(ctx context.Context, collection string, filter any, opts ...options.Lister[options.FindOptions]) (*mongo.Cursor, error)
 	OnFindOne          func(ctx context.Context, collection string, filter any, opts ...options.Lister[options.FindOneOptions]) *mongo.SingleResult
 	OnUpdateOne        func(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error)
+	OnUpdateMany       func(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error)
 	OnDeleteOne        func(ctx context.Context, collection string, filter bson.D) (int64, error)
 	OnDeleteMany       func(ctx context.Context, collection string, filter bson.D) (int64, error)
 	OnPipeFind         func(ctx context.Context, collection string, pipeline mongo.Pipeline) (*mongo.Cursor, error)
@@ -66,6 +67,10 @@ func (m *MockDatastore) FindOne(ctx context.Context, collection string, filter a
 
 func (m *MockDatastore) UpdateOne(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error) {
 	return m.OnUpdateOne(ctx, collection, filter, update)
+}
+
+func (m *MockDatastore) UpdateMany(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error) {
+	return m.OnUpdateMany(ctx, collection, filter, update)
 }
 
 func (m *MockDatastore) DeleteOne(ctx context.Context, collection string, filter bson.D) (int64, error) {

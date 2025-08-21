@@ -32,8 +32,24 @@ func UpdateOne[T DocInter](ctx context.Context, doc T, filter bson.D, update bso
 	return dataStore.UpdateOne(ctx, doc.C(), filter, update)
 }
 
+func UpdateMany[T DocInter](ctx context.Context, doc T, filter bson.D, update bson.D) (int64, error) {
+	if dataStore == nil {
+		return 0, ErrNotConnected
+	}
+	return dataStore.UpdateMany(ctx, doc.C(), filter, update)
+}
+
 func (m *mongoStore) UpdateOne(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error) {
 	result, err := m.getCollection(collection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrWriteFailed, err)
+	}
+	return result.ModifiedCount, nil
+}
+
+// UpdateMany updates all documents that match a given filter.
+func (m *mongoStore) UpdateMany(ctx context.Context, collection string, filter bson.D, update bson.D) (int64, error) {
+	result, err := m.getCollection(collection).UpdateMany(ctx, filter, update)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %v", ErrWriteFailed, err)
 	}
