@@ -88,5 +88,8 @@ func WriteTuple(ctx context.Context, tuples tupleBuilder) error {
 	_, err := writeClient.TransactRelationTuples(ctx, &pb.TransactRelationTuplesRequest{
 		RelationTupleDeltas: tuples,
 	})
-	return fmt.Errorf("%w: %w", ErrWriteFailed, err)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrWriteFailed, err)
+	}
+	return nil
 }
