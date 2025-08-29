@@ -94,6 +94,14 @@ func GetUser(ctx context.Context) (*user, error) {
 	if len(md.Get(keyUserID)) == 0 {
 		return nil, nil
 	}
+	log.Debug("get user: ",
+		log.String(keyUserID, getMetadataString(md, keyUserID)),
+		log.String(keyUserAccount, getMetadataString(md, keyUserAccount)),
+		log.String(keyUserEmail, getMetadataString(md, keyUserEmail)),
+		log.String(keyUserName, getMetadataString(md, keyUserName)),
+		log.String(keyUserLanguage, getMetadataString(md, keyUserLanguage)),
+		log.String(keyMerchantID, getMetadataString(md, keyMerchantID)),
+	)
 	return &user{
 		ID:       getMetadataString(md, keyUserID),
 		Account:  getMetadataString(md, keyUserAccount),
@@ -151,7 +159,7 @@ func RunGrpcGateway(ctx context.Context, port int) error {
 	grpc_prometheus.Register(grpcService)
 	reflection.Register(grpcService)
 	router.Path("/metrics").Handler(promhttp.Handler())
-	router.PathPrefix("/").Handler(gwmux)
+	router.PathPrefix("/").Handler(formToJSONMiddleware(gwmux))
 
 	gwServer := &http.Server{
 		Handler:           handlerFunc(grpcService, router),
