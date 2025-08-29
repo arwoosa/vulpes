@@ -50,16 +50,19 @@ func Initialize(opts ...Option) {
 		for _, opt := range opts {
 			opt(&defaultConfig)
 		}
+		if defaultConfig.writeAddr == "" && defaultConfig.readAddr == "" {
+			panic("keto service address is not set")
+		}
 		if defaultConfig.writeAddr != "" {
 			writeconn, err = grpc.NewClient(defaultConfig.writeAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				panic(err)
+				panic(fmt.Errorf("failed to connect to keto write service: %w", err))
 			}
 		}
 		if defaultConfig.readAddr != "" {
 			readconn, err = grpc.NewClient(defaultConfig.readAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
-				panic(err)
+				panic(fmt.Errorf("failed to connect to keto read service: %w", err))
 			}
 		}
 	})
