@@ -2,6 +2,16 @@
 // simplifying connection management, document operations, and schema definitions.
 package mgo
 
+import "reflect"
+
+type DocInterOpt func(d DocInter)
+
+func WithId(id any) DocInterOpt {
+	return func(d DocInter) {
+		d.SetId(id)
+	}
+}
+
 // DocInter defines a standard interface for all database documents.
 // By embedding the Index interface, it requires all documents to specify
 // their collection name, index definitions, and validation logic.
@@ -12,4 +22,42 @@ type DocInter interface {
 	Validate() error
 	GetId() any
 	SetId(any)
+}
+
+type DocV2 interface {
+	DocInter
+	InitIndex()
+	NewId()
+}
+
+func NewEmptyModel[T DocV2]() T {
+	var t T
+
+	val := reflect.New(reflect.TypeOf(t)).Elem()
+
+	// If the type is a pointer, we need to get the underlying element.
+	if val.Kind() == reflect.Ptr {
+		val.Set(reflect.New(val.Type().Elem()))
+	} else {
+		panic("NewEmptyModel: type is not a pointer")
+	}
+
+	// Type-assert the reflected value back to the generic type T.
+	model := val.Interface().(T)
+
+	// Now you can safely call the method.
+	model.InitIndex()
+
+	return model
+}
+
+func NewModelWithId[T DocV2](opts ...DocInterOpt) T {
+	model := NewEmptyModel[T]()
+	for _, opt := range opts {
+		opt(model)
+	}
+	if model.GetId() == nil {
+		model.NewId()
+	}
+	return model
 }
