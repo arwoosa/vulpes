@@ -7,7 +7,7 @@ func NewObjectID() ObjectID {
 }
 
 type ObjectID struct {
-	bson.ObjectID
+	bson.ObjectID `bson:"_id,omitempty"`
 }
 
 func (d ObjectID) GetObjectId() bson.ObjectID {
