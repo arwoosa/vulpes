@@ -24,13 +24,11 @@ type DocInter interface {
 	SetId(any)
 }
 
-type DocV2 interface {
-	DocInter
+type DocWithInitIndex interface {
 	InitIndex()
-	NewId()
 }
 
-func NewEmptyModel[T DocV2]() T {
+func NewEmptyModel[T DocWithInitIndex]() T {
 	var t T
 
 	val := reflect.New(reflect.TypeOf(t)).Elem()
@@ -51,7 +49,13 @@ func NewEmptyModel[T DocV2]() T {
 	return model
 }
 
-func NewModelWithId[T DocV2](opts ...DocInterOpt) T {
+type DocWithId interface {
+	DocWithInitIndex
+	NewId()
+	DocInter
+}
+
+func NewModelWithId[T DocWithId](opts ...DocInterOpt) T {
 	model := NewEmptyModel[T]()
 	for _, opt := range opts {
 		opt(model)

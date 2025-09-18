@@ -10,7 +10,14 @@ type ObjectID struct {
 	bson.ObjectID
 }
 
+func (d ObjectID) GetObjectId() bson.ObjectID {
+	return d.ObjectID
+}
+
 func (d ObjectID) GetId() any {
+	if d.IsZero() {
+		return nil
+	}
 	return d
 }
 
