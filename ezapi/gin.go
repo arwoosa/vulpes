@@ -62,9 +62,20 @@ func GetHttpHandler() http.Handler {
 	return engine
 }
 
+type middlewareFunc func(*[]gin.HandlerFunc)
+
+func WithMiddleware(f gin.HandlerFunc) middlewareFunc {
+	return func(middleware *[]gin.HandlerFunc) {
+		*middleware = append(*middleware, f)
+	}
+}
+
 // RunGin starts the gin server on the specified port and handles graceful shutdown.
 // It blocks until the provided context is canceled.
-func RunGin(ctx context.Context, port int) error {
+func RunGin(ctx context.Context, port int, middlewares ...middlewareFunc) error {
+	for _, f := range middlewares {
+		f(&defaultMiddelware)
+	}
 	ser := server(port)
 	var apiWait sync.WaitGroup
 	apiWait.Add(1)
