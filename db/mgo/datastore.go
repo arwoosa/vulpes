@@ -32,6 +32,8 @@ type BulkOperator interface {
 	InsertOne(doc DocInter) BulkOperator
 	UpdateOne(filter any, update any) BulkOperator
 	UpdateById(id any, update any) BulkOperator
+	DeleteOne(filter any) BulkOperator
+	DeleteById(id any) BulkOperator
 
 	Execute(ctx context.Context) (*mongo.BulkWriteResult, error)
 }
