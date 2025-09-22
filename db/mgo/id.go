@@ -18,7 +18,7 @@ func (d ObjectID) GetId() any {
 	if d.IsZero() {
 		return nil
 	}
-	return d
+	return d.ObjectID
 }
 
 func (d *ObjectID) SetId(id any) {
