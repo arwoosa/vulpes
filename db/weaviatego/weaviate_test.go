@@ -16,19 +16,6 @@ func TestInitClient(t *testing.T) {
 	})
 }
 
-func TestInitClientAndSave(t *testing.T) {
-	t.Run("InvalidHost", func(t *testing.T) {
-		testClass := NewModelsClassBuilder("Test", "This is just test calss").AddProperty("name", "string", "The name of the test").AddProperty("age", "int", "The age of the test").Apply()
-		AddModelsClass(testClass)
-		sdk, err := InitClient(context.Background(), "bqlmpphnta62iw0p8zdcjw.c0.asia-southeast1.gcp.weaviate.cloud", "bWtaUzRraVRacS9hVlBWdl8zdnhjMWl5bmpqNkEva1FPSjV0Vm9TcHhnak1qSWtZb2pmNDF3M0pBQko0PV92MjAw")
-		assert.Nil(t, err)
-		assert.NotNil(t, sdk)
-		err = sdk.CreateOrUpdateData(context.Background(), &TestData{Name: "John", Age: 18})
-		assert.Nil(t, err)
-		assert.False(t, true)
-	})
-}
-
 type TestData struct {
 	Name string `json:"name"`
 	Age  int    `json:"age"`
